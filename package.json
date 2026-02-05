@@ -1,0 +1,67 @@
+{
+    "name": "@suiport/sdk",
+    "version": "0.1.0",
+    "description": "Cross-chain payment SDK for Sui - Accept payments from any blockchain",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs",
+            "types": "./dist/index.d.ts"
+        },
+        "./core": {
+            "import": "./dist/core/index.js",
+            "require": "./dist/core/index.cjs",
+            "types": "./dist/core/index.d.ts"
+        },
+        "./components": {
+            "import": "./dist/components/index.js",
+            "require": "./dist/components/index.cjs",
+            "types": "./dist/components/index.d.ts"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint src/",
+        "prepublishOnly": "npm run build"
+    },
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0"
+    },
+    "dependencies": {
+        "@defuse-protocol/one-click-sdk-typescript": "^0.1.15",
+        "qrcode.react": "^4.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.3",
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.3"
+    },
+    "keywords": [
+        "sui",
+        "blockchain",
+        "cross-chain",
+        "payments",
+        "intents",
+        "near"
+    ],
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/suiport-sdk"
+    }
+}
