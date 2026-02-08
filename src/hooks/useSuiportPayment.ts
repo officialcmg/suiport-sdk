@@ -227,7 +227,7 @@ export function useSuiportPayment(
     const startPolling = useCallback(() => {
         if (pollingRef.current) return;
         pollStatus();
-        pollingRef.current = setInterval(pollStatus, 5000);
+        pollingRef.current = setInterval(pollStatus, 3000);
     }, [pollStatus]);
 
     // Stop polling
