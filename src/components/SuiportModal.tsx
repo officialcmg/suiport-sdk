@@ -5,7 +5,7 @@
  * Based on Aura.build design with glassmorphism and animations
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useSuiportPayment } from '../hooks/useSuiportPayment';
 import type { SuiportModalProps } from '../types';
@@ -106,10 +106,6 @@ const styles = {
         cursor: 'pointer',
         transition: 'all 0.2s',
     },
-    selectorHover: {
-        background: 'rgba(255,255,255,0.1)',
-        borderColor: 'rgba(255,255,255,0.1)',
-    },
     selectorIcon: {
         width: '32px',
         height: '32px',
@@ -160,6 +156,9 @@ const styles = {
     detailValue: {
         fontWeight: 500,
         color: 'rgba(255,255,255,0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
     },
     button: {
         width: '100%',
@@ -190,24 +189,42 @@ const styles = {
         opacity: 0.5,
         cursor: 'not-allowed',
     },
+    // QR container - dark background, no white box
     qrContainer: {
         display: 'flex',
         flexDirection: 'column' as const,
         alignItems: 'center',
         padding: '24px',
-        background: 'white',
-        borderRadius: '16px',
+        background: 'transparent',
         marginBottom: '16px',
     },
-    depositAddress: {
-        fontSize: '11px',
-        color: 'rgba(255,255,255,0.5)',
+    // Address with copy button
+    addressContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        marginTop: '16px',
+    },
+    addressText: {
+        fontSize: '12px',
+        color: 'rgba(255,255,255,0.6)',
         wordBreak: 'break-all' as const,
         textAlign: 'center' as const,
-        padding: '12px',
-        background: 'rgba(255,255,255,0.05)',
+        fontFamily: 'monospace',
+    },
+    copyButton: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '32px',
+        height: '32px',
         borderRadius: '8px',
-        marginTop: '12px',
+        background: 'rgba(255,255,255,0.1)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        flexShrink: 0,
     },
     statusBadge: {
         display: 'inline-flex',
@@ -247,6 +264,22 @@ const styles = {
         cursor: 'pointer',
         transition: 'background 0.2s',
     },
+    loadingDot: {
+        width: '8px',
+        height: '8px',
+        borderRadius: '50%',
+        background: '#818CF8',
+        animation: 'suiport-pulse 1s ease infinite',
+    },
+    tokenBadge: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        padding: '2px 8px',
+        borderRadius: '12px',
+        background: 'rgba(255,255,255,0.08)',
+        fontSize: '11px',
+    },
 };
 
 // CSS Keyframes (injected once)
@@ -272,7 +305,7 @@ const injectStyles = () => {
         }
         @keyframes suiport-pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.3; }
         }
     `;
     document.head.appendChild(style);
@@ -303,6 +336,8 @@ export function SuiportModal({
 
     const [chainDropdownOpen, setChainDropdownOpen] = React.useState(false);
     const [tokenDropdownOpen, setTokenDropdownOpen] = React.useState(false);
+    const [copied, setCopied] = useState(false);
+    const [showReceipt, setShowReceipt] = useState(false);
 
     // Inject styles on mount
     useEffect(() => {
@@ -314,8 +349,12 @@ export function SuiportModal({
         if (payment.paymentState === 'awaiting_deposit') {
             payment.startPolling();
         }
-        return () => payment.stopPolling();
     }, [payment.paymentState]);
+
+    // Stop polling on unmount only
+    useEffect(() => {
+        return () => payment.stopPolling();
+    }, []);
 
     // Reset on close
     const handleClose = useCallback(() => {
@@ -334,6 +373,17 @@ export function SuiportModal({
         }
     }, [open, handleClose]);
 
+    // Copy address handler
+    const handleCopy = useCallback(async () => {
+        if (payment.quote?.depositAddress) {
+            const success = await payment.copyToClipboard(payment.quote.depositAddress);
+            if (success) {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            }
+        }
+    }, [payment]);
+
     if (!open) return null;
 
     const canSubmit =
@@ -341,7 +391,7 @@ export function SuiportModal({
     const isProcessing =
         payment.paymentState === 'quoting' ||
         payment.paymentState === 'processing';
-    const showQR = payment.paymentState === 'awaiting_deposit';
+    const showQR = payment.paymentState === 'awaiting_deposit' || payment.paymentState === 'processing';
     const isSuccess = payment.paymentState === 'success';
 
     return (
@@ -363,357 +413,415 @@ export function SuiportModal({
                     <CloseIcon />
                 </button>
 
-                {/* Header */}
-                <div style={styles.header}>
-                    <div style={styles.headerIcon}>
-                        <CardIcon />
-                    </div>
-                    <h2 style={styles.title}>
-                        {isSuccess
-                            ? 'Payment Complete!'
-                            : showQR
-                                ? 'Send Payment'
-                                : 'Pay with any token'}
-                    </h2>
-                    <p style={styles.subtitle}>
-                        {isSuccess
-                            ? 'Your transaction was successful'
-                            : showQR
-                                ? 'Scan QR or copy address below'
-                                : 'Secure, gasless transactions'}
-                    </p>
-                </div>
+                {/* Success State - Full Daimo-style */}
+                {isSuccess ? (
+                    <div style={{ textAlign: 'center', paddingTop: '20px' }}>
+                        <h2 style={{ ...styles.title, marginBottom: '32px', fontSize: '20px' }}>
+                            Payment Successful
+                        </h2>
 
-                {/* Success State */}
-                {isSuccess && (
-                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                        {/* Large Checkmark Circle */}
                         <div
                             style={{
-                                width: '64px',
-                                height: '64px',
+                                width: '100px',
+                                height: '100px',
                                 borderRadius: '50%',
-                                background: 'rgba(16, 185, 129, 0.2)',
+                                background: 'rgba(22, 22, 30, 0.9)',
+                                border: '3px solid #10B981',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                margin: '0 auto 16px',
+                                margin: '0 auto 24px',
+                                boxShadow: '0 0 30px rgba(16, 185, 129, 0.3)',
                             }}
                         >
-                            <CheckIcon />
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
                         </div>
-                        <p
-                            style={{
-                                color: '#10B981',
-                                fontSize: '14px',
-                                fontWeight: 500,
-                            }}
-                        >
-                            Payment received successfully!
+
+                        <p style={{ color: 'white', fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>
+                            Payment Completed
                         </p>
-                    </div>
-                )}
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '32px' }}>
+                            {payment.amount} {payment.selectedToken?.symbol} → ~{payment.quote?.amountOutFormatted || ''} {payment.destinationToken.symbol} on Sui
+                        </p>
 
-                {/* QR Code State */}
-                {showQR && payment.quote && (
-                    <>
-                        <div style={styles.qrContainer}>
-                            <QRCodeSVG
-                                value={payment.quote.depositAddress}
-                                size={180}
-                                level="M"
-                                bgColor="white"
-                                fgColor="#0A0A0F"
-                            />
-                        </div>
-                        <div style={styles.depositAddress}>
-                            {payment.quote.depositAddress}
-                        </div>
-                        <div
-                            style={{
-                                ...styles.details,
-                                marginTop: '16px',
-                            }}
-                        >
-                            <div style={styles.detailRow}>
-                                <span>Status</span>
-                                <span
-                                    style={{
-                                        ...styles.statusBadge,
-                                        ...styles.processingBadge,
-                                    }}
-                                >
-                                    <PulseIcon /> Waiting for deposit
-                                </span>
-                            </div>
-                            <div style={styles.detailRow}>
-                                <span>Amount to send</span>
-                                <span style={styles.detailValue}>
-                                    {payment.amount} {payment.selectedToken?.symbol}
-                                </span>
-                            </div>
-                            <div style={styles.detailRow}>
-                                <span>You receive</span>
-                                <span style={styles.detailValue}>
-                                    ~{payment.quote.amountOutFormatted}{' '}
-                                    {payment.destinationToken.symbol}
-                                </span>
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {/* Selection State */}
-                {!showQR && !isSuccess && (
-                    <>
-                        {/* Chain & Token Selectors */}
-                        <div style={styles.selectorsRow}>
-                            {/* Chain Selector */}
-                            <div style={{ position: 'relative' }}>
-                                <div
-                                    style={styles.selector}
-                                    onClick={() => {
-                                        setChainDropdownOpen(!chainDropdownOpen);
-                                        setTokenDropdownOpen(false);
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                        }}
-                                    >
-                                        <div style={styles.selectorIcon}>
-                                            {payment.selectedChain ? (
-                                                <img
-                                                    src={payment.selectedChain.icon}
-                                                    alt=""
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '100%',
-                                                    }}
-                                                />
-                                            ) : (
-                                                <GlobeIcon />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <div style={styles.selectorLabel}>
-                                                Chain
-                                            </div>
-                                            <div style={styles.selectorValue}>
-                                                {payment.selectedChain?.name ||
-                                                    'Select'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <ChevronIcon />
-                                </div>
-
-                                {/* Chain Dropdown */}
-                                {chainDropdownOpen && (
-                                    <div style={styles.dropdown}>
-                                        {payment.chains.map((chain) => (
-                                            <div
-                                                key={chain.id}
-                                                style={styles.dropdownItem}
-                                                onClick={() => {
-                                                    payment.setSelectedChain(chain);
-                                                    setChainDropdownOpen(false);
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background =
-                                                        'rgba(255,255,255,0.1)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background =
-                                                        'transparent';
-                                                }}
-                                            >
-                                                <img
-                                                    src={chain.icon}
-                                                    alt=""
-                                                    style={{
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        borderRadius: '50%',
-                                                    }}
-                                                />
-                                                <span
-                                                    style={{
-                                                        color: 'white',
-                                                        fontSize: '14px',
-                                                    }}
-                                                >
-                                                    {chain.name}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Token Selector */}
-                            <div style={{ position: 'relative' }}>
-                                <div
-                                    style={{
-                                        ...styles.selector,
-                                        opacity: payment.selectedChain ? 1 : 0.5,
-                                        pointerEvents: payment.selectedChain
-                                            ? 'auto'
-                                            : 'none',
-                                    }}
-                                    onClick={() => {
-                                        if (payment.selectedChain) {
-                                            setTokenDropdownOpen(!tokenDropdownOpen);
-                                            setChainDropdownOpen(false);
-                                        }
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                        }}
-                                    >
-                                        <div style={styles.selectorIcon}>
-                                            {payment.selectedToken ? (
-                                                <img
-                                                    src={payment.selectedToken.icon}
-                                                    alt=""
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '100%',
-                                                    }}
-                                                />
-                                            ) : (
-                                                <DollarIcon />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <div style={styles.selectorLabel}>
-                                                Token
-                                            </div>
-                                            <div style={styles.selectorValue}>
-                                                {payment.selectedToken?.symbol ||
-                                                    'Select'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <ChevronIcon />
-                                </div>
-
-                                {/* Token Dropdown */}
-                                {tokenDropdownOpen && (
-                                    <div style={styles.dropdown}>
-                                        {payment.tokens.map((token) => (
-                                            <div
-                                                key={token.assetId}
-                                                style={styles.dropdownItem}
-                                                onClick={() => {
-                                                    payment.setSelectedToken(token);
-                                                    setTokenDropdownOpen(false);
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background =
-                                                        'rgba(255,255,255,0.1)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background =
-                                                        'transparent';
-                                                }}
-                                            >
-                                                <img
-                                                    src={token.icon}
-                                                    alt=""
-                                                    style={{
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        borderRadius: '50%',
-                                                    }}
-                                                />
-                                                <span
-                                                    style={{
-                                                        color: 'white',
-                                                        fontSize: '14px',
-                                                    }}
-                                                >
-                                                    {token.symbol}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Amount Input */}
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="0.00"
-                            value={payment.amount}
-                            onChange={(e) => payment.setAmount(e.target.value)}
-                            style={styles.amountInput}
-                        />
-
-                        {/* Details */}
-                        <div style={styles.details}>
-                            <div style={styles.detailRow}>
-                                <span>You receive</span>
-                                <div
-                                    style={{
-                                        height: '12px',
-                                        width: '64px',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        borderRadius: '4px',
-                                    }}
-                                />
-                            </div>
-                            <div style={styles.detailRow}>
-                                <span>Destination</span>
-                                <span style={styles.detailValue}>
-                                    {payment.destinationToken.symbol} on Sui
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Submit Button */}
+                        {/* Show Receipt Link */}
                         <button
-                            style={{
-                                ...styles.button,
-                                ...(!canSubmit || isProcessing
-                                    ? styles.buttonDisabled
-                                    : {}),
-                            }}
-                            disabled={!canSubmit || isProcessing}
-                            onClick={() => payment.fetchQuote()}
+                            onClick={() => setShowReceipt(!showReceipt)}
+                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginBottom: showReceipt ? '16px' : '0' }}
                         >
-                            <div style={styles.buttonInner}>
-                                {isProcessing ? (
-                                    <>
-                                        <SpinnerIcon /> Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        Confirm Payment
-                                        <ArrowIcon />
-                                    </>
+                            {showReceipt ? 'Hide receipt' : 'Show receipt'}
+                        </button>
+
+                        {/* Receipt Details */}
+                        {showReceipt && (
+                            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', textAlign: 'left', marginTop: '8px' }}>
+                                {payment.status?.originTxHashes?.map((hash, i) => (
+                                    <div key={`origin-${i}`} style={{ marginBottom: '12px' }}>
+                                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '4px' }}>Source TX ({payment.selectedChain?.name})</p>
+                                        <a href={payment.selectedChain?.id === 'base' ? `https://basescan.org/tx/${hash}` : payment.selectedChain?.id === 'arb' ? `https://arbiscan.io/tx/${hash}` : `https://etherscan.io/tx/${hash}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60A5FA', fontSize: '13px', textDecoration: 'none', fontFamily: 'monospace' }}>
+                                            {hash.slice(0, 10)}...{hash.slice(-8)} ↗
+                                        </a>
+                                    </div>
+                                ))}
+                                {payment.status?.destinationTxHashes?.map((hash, i) => (
+                                    <div key={`dest-${i}`}>
+                                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '4px' }}>Destination TX (Sui)</p>
+                                        <a href={`https://suiscan.xyz/mainnet/tx/${hash}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60A5FA', fontSize: '13px', textDecoration: 'none', fontFamily: 'monospace' }}>
+                                            {hash.slice(0, 10)}...{hash.slice(-8)} ↗
+                                        </a>
+                                    </div>
+                                ))}
+                                {!payment.status?.originTxHashes?.length && !payment.status?.destinationTxHashes?.length && (
+                                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Transaction details loading...</p>
                                 )}
                             </div>
-                        </button>
-                    </>
-                )}
+                        )}
 
-                {/* Close button for success */}
-                {isSuccess && (
-                    <button
-                        style={styles.button}
-                        onClick={handleClose}
-                    >
-                        <div style={styles.buttonInner}>Done</div>
-                    </button>
+                        {/* Done Button */}
+                        <button onClick={handleClose} style={{ ...styles.button, marginTop: '24px', background: 'linear-gradient(135deg, #10B981, #059669)' }}>
+                            Done
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        {/* Header - only when not success */}
+                        <div style={styles.header}>
+                            <div style={styles.headerIcon}>
+                                <CardIcon />
+                            </div>
+                            <h2 style={styles.title}>
+                                {showQR ? 'Send Payment' : 'Pay with any token'}
+                            </h2>
+                            <p style={styles.subtitle}>
+                                {showQR ? 'Scan QR or copy address below' : 'Secure, gasless transactions'}
+                            </p>
+                        </div>
+
+                        {/* QR Code State */}
+                        {showQR && payment.quote && (
+                            <>
+                                {/* QR Code - white on dark background */}
+                                <div style={styles.qrContainer}>
+                                    <QRCodeSVG
+                                        value={payment.quote.depositAddress}
+                                        size={180}
+                                        level="M"
+                                        bgColor="transparent"
+                                        fgColor="white"
+                                    />
+                                </div>
+
+                                {/* Address with copy button */}
+                                <div style={styles.addressContainer}>
+                                    <span style={styles.addressText}>
+                                        {payment.quote.depositAddress.slice(0, 8)}...
+                                        {payment.quote.depositAddress.slice(-8)}
+                                    </span>
+                                    <button
+                                        style={styles.copyButton}
+                                        onClick={handleCopy}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                        }}
+                                    >
+                                        {copied ? <CheckSmallIcon /> : <CopyIcon />}
+                                    </button>
+                                </div>
+
+                                {/* Details with chain/token info */}
+                                <div style={{ ...styles.details, marginTop: '20px' }}>
+                                    <div style={styles.detailRow}>
+                                        <span>Status</span>
+                                        <span
+                                            style={{
+                                                ...styles.statusBadge,
+                                                ...styles.processingBadge,
+                                            }}
+                                        >
+                                            <PulseIcon /> {payment.paymentState === 'processing' ? 'Processing deposit...' : 'Waiting for deposit'}
+                                        </span>
+                                    </div>
+                                    <div style={styles.detailRow}>
+                                        <span>Amount to send</span>
+                                        <span style={styles.detailValue}>
+                                            {payment.amount} {payment.selectedToken?.symbol}
+                                            <span style={styles.tokenBadge}>
+                                                {payment.selectedChain?.name}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div style={styles.detailRow}>
+                                        <span>You receive</span>
+                                        <span style={styles.detailValue}>
+                                            ~{payment.quote.amountOutFormatted}{' '}
+                                            {payment.destinationToken.symbol}
+                                            <span style={styles.tokenBadge}>Sui</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Selection State */}
+                        {!showQR && !isSuccess && (
+                            <>
+                                {/* Chain & Token Selectors */}
+                                <div style={styles.selectorsRow}>
+                                    {/* Chain Selector */}
+                                    <div style={{ position: 'relative' }}>
+                                        <div
+                                            style={styles.selector}
+                                            onClick={() => {
+                                                setChainDropdownOpen(!chainDropdownOpen);
+                                                setTokenDropdownOpen(false);
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                }}
+                                            >
+                                                <div style={styles.selectorIcon}>
+                                                    {payment.selectedChain ? (
+                                                        <img
+                                                            src={payment.selectedChain.icon}
+                                                            alt=""
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <GlobeIcon />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div style={styles.selectorLabel}>
+                                                        Chain
+                                                    </div>
+                                                    <div style={styles.selectorValue}>
+                                                        {payment.selectedChain?.name ||
+                                                            'Select'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <ChevronIcon />
+                                        </div>
+
+                                        {/* Chain Dropdown */}
+                                        {chainDropdownOpen && (
+                                            <div style={styles.dropdown}>
+                                                {payment.chains.map((chain) => (
+                                                    <div
+                                                        key={chain.id}
+                                                        style={styles.dropdownItem}
+                                                        onClick={() => {
+                                                            payment.setSelectedChain(chain);
+                                                            setChainDropdownOpen(false);
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background =
+                                                                'rgba(255,255,255,0.1)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background =
+                                                                'transparent';
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={chain.icon}
+                                                            alt=""
+                                                            style={{
+                                                                width: '24px',
+                                                                height: '24px',
+                                                                borderRadius: '50%',
+                                                            }}
+                                                        />
+                                                        <span
+                                                            style={{
+                                                                color: 'white',
+                                                                fontSize: '14px',
+                                                            }}
+                                                        >
+                                                            {chain.name}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Token Selector */}
+                                    <div style={{ position: 'relative' }}>
+                                        <div
+                                            style={{
+                                                ...styles.selector,
+                                                opacity: payment.selectedChain ? 1 : 0.5,
+                                                pointerEvents: payment.selectedChain
+                                                    ? 'auto'
+                                                    : 'none',
+                                            }}
+                                            onClick={() => {
+                                                if (payment.selectedChain) {
+                                                    setTokenDropdownOpen(!tokenDropdownOpen);
+                                                    setChainDropdownOpen(false);
+                                                }
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                }}
+                                            >
+                                                <div style={styles.selectorIcon}>
+                                                    {payment.selectedToken ? (
+                                                        <img
+                                                            src={payment.selectedToken.icon}
+                                                            alt=""
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <DollarIcon />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div style={styles.selectorLabel}>
+                                                        Token
+                                                    </div>
+                                                    <div style={styles.selectorValue}>
+                                                        {payment.selectedToken?.symbol ||
+                                                            'Select'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <ChevronIcon />
+                                        </div>
+
+                                        {/* Token Dropdown */}
+                                        {tokenDropdownOpen && (
+                                            <div style={styles.dropdown}>
+                                                {payment.tokens.map((token) => (
+                                                    <div
+                                                        key={token.assetId}
+                                                        style={styles.dropdownItem}
+                                                        onClick={() => {
+                                                            payment.setSelectedToken(token);
+                                                            setTokenDropdownOpen(false);
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background =
+                                                                'rgba(255,255,255,0.1)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background =
+                                                                'transparent';
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={token.icon}
+                                                            alt=""
+                                                            style={{
+                                                                width: '24px',
+                                                                height: '24px',
+                                                                borderRadius: '50%',
+                                                            }}
+                                                        />
+                                                        <span
+                                                            style={{
+                                                                color: 'white',
+                                                                fontSize: '14px',
+                                                            }}
+                                                        >
+                                                            {token.symbol}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Amount Input */}
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    value={payment.amount}
+                                    onChange={(e) => payment.setAmount(e.target.value)}
+                                    style={styles.amountInput}
+                                />
+
+                                {/* Details - only show "You receive" after amount entered */}
+                                <div style={styles.details}>
+                                    {payment.amount && (
+                                        <div style={styles.detailRow}>
+                                            <span>You receive</span>
+                                            {payment.isLoadingPreview ? (
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    <div style={styles.loadingDot} />
+                                                    <div style={{ ...styles.loadingDot, animationDelay: '0.2s' }} />
+                                                    <div style={{ ...styles.loadingDot, animationDelay: '0.4s' }} />
+                                                </div>
+                                            ) : payment.previewQuote ? (
+                                                <span style={styles.detailValue}>
+                                                    ~{payment.previewQuote.amountOutFormatted}{' '}
+                                                    {payment.destinationToken.symbol}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: 'rgba(255,255,255,0.3)' }}>
+                                                    Enter amount...
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                    <div style={styles.detailRow}>
+                                        <span>Destination</span>
+                                        <span style={styles.detailValue}>
+                                            {payment.destinationToken.symbol} on Sui
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Submit Button */}
+                                <button
+                                    style={{
+                                        ...styles.button,
+                                        ...(!canSubmit || isProcessing
+                                            ? styles.buttonDisabled
+                                            : {}),
+                                    }}
+                                    disabled={!canSubmit || isProcessing}
+                                    onClick={() => payment.fetchQuote()}
+                                >
+                                    <div style={styles.buttonInner}>
+                                        {isProcessing ? (
+                                            <>
+                                                <SpinnerIcon /> Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Confirm Payment
+                                                <ArrowIcon />
+                                            </>
+                                        )}
+                                    </div>
+                                </button>
+                            </>
+                        )}
+                    </>
                 )}
 
                 {/* Powered by */}
@@ -731,6 +839,7 @@ export function SuiportModal({
         </div>
     );
 }
+
 
 // ============================================================================
 // ICONS
@@ -803,7 +912,7 @@ function ChevronIcon() {
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="rgba(255,255,255,0.3)"
+            stroke="rgba(255,255,255,0.4)"
             strokeWidth="2"
         >
             <path d="M6 9l6 6 6-6" />
@@ -811,32 +920,50 @@ function ChevronIcon() {
     );
 }
 
-function ArrowIcon() {
-    return (
-        <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-        >
-            <path d="M5 12h14M12 5l7 7-7 7" />
-        </svg>
-    );
-}
 
-function CheckIcon() {
+
+
+function CheckSmallIcon() {
     return (
         <svg
-            width="32"
-            height="32"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="#10B981"
             strokeWidth="2"
         >
             <path d="M20 6L9 17l-5-5" />
+        </svg>
+    );
+}
+
+function CopyIcon() {
+    return (
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(255,255,255,0.7)"
+            strokeWidth="2"
+        >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+    );
+}
+
+function PulseIcon() {
+    return (
+        <svg width="8" height="8" viewBox="0 0 8 8">
+            <circle
+                cx="4"
+                cy="4"
+                r="4"
+                fill="#818CF8"
+                style={{ animation: 'suiport-pulse 1s ease infinite' }}
+            />
         </svg>
     );
 }
@@ -848,25 +975,36 @@ function SpinnerIcon() {
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
             style={{ animation: 'spin 1s linear infinite' }}
         >
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="rgba(255,255,255,0.2)"
+                strokeWidth="3"
+            />
+            <path
+                d="M12 2a10 10 0 019.95 9"
+                stroke="white"
+                strokeWidth="3"
+                strokeLinecap="round"
+            />
         </svg>
     );
 }
 
-function PulseIcon() {
+function ArrowIcon() {
     return (
-        <span
-            style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#818CF8',
-                animation: 'suiport-pulse 1.5s ease infinite',
-            }}
-        />
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+        >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
     );
 }
