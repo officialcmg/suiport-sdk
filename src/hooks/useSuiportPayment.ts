@@ -35,6 +35,8 @@ export interface UseSuiportPaymentReturn {
     // State
     paymentState: PaymentState;
     quote: QuoteResult | null;
+    previewQuote: QuoteResult | null;
+    isLoadingPreview: boolean;
     status: StatusResult | null;
     error: Error | null;
 
@@ -57,6 +59,7 @@ export interface UseSuiportPaymentReturn {
     startPolling: () => void;
     stopPolling: () => void;
     reset: () => void;
+    copyToClipboard: (text: string) => Promise<boolean>;
 }
 
 export function useSuiportPayment(
@@ -71,37 +74,82 @@ export function useSuiportPayment(
     // State
     const [paymentState, setPaymentState] = useState<PaymentState>('idle');
     const [quote, setQuote] = useState<QuoteResult | null>(null);
+    const [previewQuote, setPreviewQuote] = useState<QuoteResult | null>(null);
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
     const [status, setStatus] = useState<StatusResult | null>(null);
     const [error, setError] = useState<Error | null>(null);
 
     // Selection state
     const [selectedChain, setSelectedChain] = useState<Chain | null>(null);
     const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-    const [amount, setAmount] = useState(options.amount || '');
+    const [amount, setAmountState] = useState('');
 
-    // Polling ref
+    // Refs
     const pollingRef = useRef<NodeJS.Timeout | null>(null);
     const lastStatusRef = useRef<ExecutionStatus | null>(null);
+    const previewDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
     // Get available chains/tokens
-    const chains = getSupportedChains().filter((c) => c.id !== 'sui'); // Exclude Sui as source
+    const chains = getSupportedChains().filter((c) => c.id !== 'sui');
     const tokens = selectedChain?.tokens || [];
     const destinationTokens = getSuiDestinationTokens();
+
+    // Handle amount change with debounced preview
+    const setAmount = useCallback(
+        (newAmount: string) => {
+            setAmountState(newAmount);
+            setPreviewQuote(null);
+
+            // Clear existing debounce
+            if (previewDebounceRef.current) {
+                clearTimeout(previewDebounceRef.current);
+            }
+
+            // Only fetch preview if we have required fields
+            if (newAmount && selectedToken && refundAddress) {
+                setIsLoadingPreview(true);
+
+                // Debounce 3 seconds
+                previewDebounceRef.current = setTimeout(async () => {
+                    try {
+                        const result = await getQuote({
+                            originToken: selectedToken,
+                            destinationToken: destToken,
+                            amount: newAmount,
+                            recipient,
+                            refundTo: refundAddress,
+                            dry: true, // Dry run for preview
+                        });
+                        setPreviewQuote(result);
+                    } catch (err) {
+                        console.warn('Preview quote failed:', err);
+                    } finally {
+                        setIsLoadingPreview(false);
+                    }
+                }, 3000);
+            } else {
+                setIsLoadingPreview(false);
+            }
+        },
+        [selectedToken, refundAddress, recipient, destToken]
+    );
 
     // Handle chain selection
     const handleChainSelect = useCallback((chain: Chain) => {
         setSelectedChain(chain);
         setSelectedToken(chain.tokens[0] || null);
         setPaymentState('selecting');
+        setPreviewQuote(null);
     }, []);
 
     // Handle token selection
     const handleTokenSelect = useCallback((token: Token) => {
         setSelectedToken(token);
         setPaymentState('selecting');
+        setPreviewQuote(null);
     }, []);
 
-    // Fetch quote
+    // Fetch quote (real, non-dry)
     const fetchQuote = useCallback(async () => {
         if (!selectedToken || !amount || !refundAddress) {
             setError(new Error('Missing required fields'));
@@ -150,7 +198,6 @@ export function useSuiportPayment(
             );
             setStatus(result);
 
-            // Detect status changes
             if (result.status !== lastStatusRef.current) {
                 lastStatusRef.current = result.status;
 
@@ -179,11 +226,7 @@ export function useSuiportPayment(
     // Start polling
     const startPolling = useCallback(() => {
         if (pollingRef.current) return;
-
-        // Initial check
         pollStatus();
-
-        // Start interval
         pollingRef.current = setInterval(pollStatus, 5000);
     }, [pollStatus]);
 
@@ -195,27 +238,49 @@ export function useSuiportPayment(
         }
     }, []);
 
+    // Copy to clipboard
+    const copyToClipboard = useCallback(async (text: string): Promise<boolean> => {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            return false;
+        }
+    }, []);
+
     // Reset state
     const reset = useCallback(() => {
         stopPolling();
+        if (previewDebounceRef.current) {
+            clearTimeout(previewDebounceRef.current);
+        }
         setPaymentState('idle');
         setQuote(null);
+        setPreviewQuote(null);
+        setIsLoadingPreview(false);
         setStatus(null);
         setError(null);
         setSelectedChain(null);
         setSelectedToken(null);
-        setAmount(options.amount || '');
+        setAmountState('');
         lastStatusRef.current = null;
-    }, [stopPolling, options.amount]);
+    }, [stopPolling]);
 
     // Cleanup on unmount
     useEffect(() => {
-        return () => stopPolling();
+        return () => {
+            stopPolling();
+            if (previewDebounceRef.current) {
+                clearTimeout(previewDebounceRef.current);
+            }
+        };
     }, [stopPolling]);
 
     return {
         paymentState,
         quote,
+        previewQuote,
+        isLoadingPreview,
         status,
         error,
         selectedChain,
@@ -232,5 +297,6 @@ export function useSuiportPayment(
         startPolling,
         stopPolling,
         reset,
+        copyToClipboard,
     };
 }
