@@ -20,7 +20,7 @@ let _config: SuiportConfig | null = null;
  *
  * @example
  * ```ts
- * import { initSuiport } from '@suiport/sdk'
+ * import { initSuiport } from 'suiport-sdk'
  *
  * initSuiport({
  *   apiKey: 'your-near-api-key',

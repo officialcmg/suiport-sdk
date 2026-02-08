@@ -1,5 +1,5 @@
 {
-    "name": "@suiport/sdk",
+    "name": "suiport-sdk",
     "version": "0.1.0",
     "description": "Cross-chain payment SDK for Sui - Accept payments from any blockchain",
     "type": "module",

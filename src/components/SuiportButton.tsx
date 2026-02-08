@@ -5,7 +5,7 @@
  *
  * @example
  * ```tsx
- * import { SuiportButton } from '@suiport/sdk'
+ * import { SuiportButton } from 'suiport-sdk'
  *
  * <SuiportButton
  *   recipient="0x..."

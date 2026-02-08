@@ -1,17 +1,17 @@
-# @suiport/sdk
+# suiport-sdk
 
 Cross-chain payment SDK for Sui. Accept payments from any blockchain.
 
 ## Installation
 
 ```bash
-npm install @suiport/sdk
+npm install suiport-sdk
 ```
 
 ## Quick Start
 
 ```tsx
-import { initSuiport, SuiportButton } from '@suiport/sdk'
+import { initSuiport, SuiportButton } from 'suiport-sdk'
 
 // Initialize once at app startup
 initSuiport({
