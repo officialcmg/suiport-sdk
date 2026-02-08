@@ -14,8 +14,9 @@ npm install suiport-sdk
 import { initSuiport, SuiportButton } from 'suiport-sdk'
 
 // Initialize once at app startup
+// Get your API key from https://partners.near-intents.org/
 initSuiport({
-  apiKey: 'your-near-api-key',
+  apiKey: 'your-near-intents-api-key',
 })
 
 // Add the button anywhere
