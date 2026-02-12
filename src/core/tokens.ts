@@ -1,8 +1,8 @@
 /**
- * SuiPort Token Definitions
+ * Uniport Token Definitions
  * 
- * Importable token constants for the SuiPort SDK.
- * Usage: import { arbitrumUSDC, suiSUI, CHAINS } from 'suiport/tokens'
+ * Importable token constants for the Uniport SDK.
+ * Usage: import { arbitrumUSDC, suiSUI, CHAINS } from 'uniport/tokens'
  * 
  * Token naming convention: {chain}{Symbol}
  * Example: arbitrumUSDC, ethereumETH, suiSUI
@@ -162,7 +162,7 @@ function createToken(
 }
 
 // ============================================================================
-// SUI TOKENS (Destination chain for SuiPort!)
+// SUI TOKENS (Destination chain for Uniport!)
 // ============================================================================
 
 export const suiSUI = createToken('sui', 'SUI', 'nep141:sui.omft.near', 9);
@@ -474,7 +474,7 @@ export function getSupportedChains(): Chain[] {
     return Object.values(CHAINS).filter(c => c.tokens.length > 0);
 }
 
-/** Get SUI destination tokens (for SuiPort) */
+/** Get SUI destination tokens (for Uniport) */
 export function getSuiDestinationTokens(): Token[] {
     return CHAINS.sui.tokens;
 }

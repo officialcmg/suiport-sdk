@@ -1,5 +1,5 @@
 /**
- * SuiPort Intents Service
+ * Uniport Intents Service
  *
  * Core functions for cross-chain swaps via 1Click SDK
  */
@@ -134,7 +134,7 @@ export function generateDeadline(hoursFromNow = 1): string {
 function ensureInitialized() {
     if (!isInitialized()) {
         throw new Error(
-            'SuiPort SDK not initialized. Call initSuiport() first.'
+            'Uniport SDK not initialized. Call initUniport() first.'
         );
     }
 }
@@ -156,7 +156,7 @@ export async function getQuote(options: QuoteOptions): Promise<QuoteResult> {
         swapType = 'EXACT_INPUT',
         deadline,
         dry = false,
-        referral = config.referral || 'suiport',
+        referral = config.referral || 'uniport',
     } = options;
 
     const amountInSmallestUnits = toSmallestUnits(amount, originToken.decimals);

@@ -1,26 +1,26 @@
-# suiport-sdk
+# uniport
 
 Cross-chain payment SDK for Sui. Accept payments from any blockchain with one line of code.
 
 ## Installation
 
 ```bash
-npm install suiport-sdk
+npm install uniport
 ```
 
 ## Quick Start
 
 ```tsx
-import { initSuiport, SuiportButton } from 'suiport-sdk'
+import { initUniport, UniportButton } from 'uniport'
 
 // Initialize once at app startup
 // Get your API key from https://partners.near-intents.org/
-initSuiport({
+initUniport({
   apiKey: 'your-near-intents-api-key',
 })
 
 // Add the payment button
-<SuiportButton
+<UniportButton
   recipient="0x..." // Your Sui wallet address
   onSuccess={(result) => console.log('Paid!', result.txHash)}
 />
@@ -28,7 +28,7 @@ initSuiport({
 
 That's it! Users can now pay you from 21+ blockchains. The token received is USDC on Sui by default.
 
-## SuiportButton Props
+## UniportButton Props
 
 | Prop | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
@@ -89,7 +89,7 @@ That's it! Users can now pay you from 21+ blockchains. The token received is USD
 
 ## Advanced Usage
 
-For custom implementations, the SDK also exports `SuiportModal`, `useSuiportPayment` hook, and core functions like `getQuote` and `getExecutionStatus`. See the source code for details.
+For custom implementations, the SDK also exports `UniportModal`, `useUniportPayment` hook, and core functions like `getQuote` and `getExecutionStatus`. See the source code for details.
 
 ## License
 

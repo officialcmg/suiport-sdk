@@ -1,5 +1,5 @@
 /**
- * useSuiportPayment Hook
+ * useUniportPayment Hook
  *
  * Main hook for managing payment state and flow
  */
@@ -22,7 +22,7 @@ import {
 } from '../core/tokens';
 import type { PaymentState } from '../types';
 
-export interface UseSuiportPaymentOptions {
+export interface UseUniportPaymentOptions {
     recipient: string;
     refundAddress?: string;
     destinationToken?: 'suiSUI' | 'suiUSDC';
@@ -31,7 +31,7 @@ export interface UseSuiportPaymentOptions {
     onError?: (error: Error) => void;
 }
 
-export interface UseSuiportPaymentReturn {
+export interface UseUniportPaymentReturn {
     // State
     paymentState: PaymentState;
     quote: QuoteResult | null;
@@ -62,9 +62,9 @@ export interface UseSuiportPaymentReturn {
     copyToClipboard: (text: string) => Promise<boolean>;
 }
 
-export function useSuiportPayment(
-    options: UseSuiportPaymentOptions
-): UseSuiportPaymentReturn {
+export function useUniportPayment(
+    options: UseUniportPaymentOptions
+): UseUniportPaymentReturn {
     const { recipient, refundAddress, destinationToken, onSuccess, onError } =
         options;
 

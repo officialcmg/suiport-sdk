@@ -1,5 +1,5 @@
 /**
- * SuiPort SDK Types
+ * Uniport SDK Types
  *
  * Component props and UI state types
  */
@@ -8,8 +8,8 @@
 // COMPONENT PROPS
 // ============================================================================
 
-/** Props for the SuiportButton component */
-export interface SuiportButtonProps {
+/** Props for the UniportButton component */
+export interface UniportButtonProps {
     /** Recipient address on Sui */
     recipient: string;
     /** Refund address (optional, will use connected wallet if not provided) */
@@ -34,8 +34,8 @@ export interface SuiportButtonProps {
     onOpenChange?: (open: boolean) => void;
 }
 
-/** Props for the SuiportModal component */
-export interface SuiportModalProps {
+/** Props for the UniportModal component */
+export interface UniportModalProps {
     /** Whether the modal is open */
     open: boolean;
     /** Callback to close the modal */

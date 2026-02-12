@@ -2,4 +2,4 @@
  * Hooks module exports
  */
 
-export * from './useSuiportPayment';
+export * from './useUniportPayment';

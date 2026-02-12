@@ -1,7 +1,7 @@
 {
-    "name": "suiport-sdk",
-    "version": "0.1.5",
-    "description": "Cross-chain payment SDK for Sui - Accept payments from any blockchain",
+    "name": "uniport",
+    "version": "1.0.0",
+    "description": "Cross-chain payment SDK - Accept crypto payments from any blockchain",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
@@ -62,6 +62,6 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/officialcmg/suiport-sdk"
+        "url": "https://github.com/officialcmg/uniport"
     }
 }

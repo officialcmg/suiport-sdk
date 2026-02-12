@@ -1,13 +1,13 @@
 /**
- * SuiportButton Component
+ * UniportButton Component
  *
- * Drop-in button that opens the SuiPort payment modal
+ * Drop-in button that opens the Uniport payment modal
  *
  * @example
  * ```tsx
- * import { SuiportButton } from 'suiport-sdk'
+ * import { UniportButton } from 'uniport'
  *
- * <SuiportButton
+ * <UniportButton
  *   recipient="0x..."
  *   destinationToken="suiUSDC"
  *   onSuccess={(result) => console.log('Paid!', result)}
@@ -16,8 +16,8 @@
  */
 
 import React, { useState } from 'react';
-import { SuiportModal } from './SuiportModal';
-import type { SuiportButtonProps } from '../types';
+import { UniportModal } from './UniportModal';
+import type { UniportButtonProps } from '../types';
 
 const buttonStyles = {
     default: {
@@ -79,7 +79,7 @@ const buttonStyles = {
     } as React.CSSProperties,
 };
 
-export function SuiportButton({
+export function UniportButton({
     recipient,
     refundAddress,
     destinationToken = 'suiUSDC',
@@ -91,7 +91,7 @@ export function SuiportButton({
     onSuccess,
     onError,
     onOpenChange,
-}: SuiportButtonProps) {
+}: UniportButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleOpen = () => {
@@ -120,11 +120,11 @@ export function SuiportButton({
                 className={className}
                 style={style}
             >
-                <SuiportIcon />
+                <UniportIcon />
                 {label}
             </button>
 
-            <SuiportModal
+            <UniportModal
                 open={isOpen}
                 onClose={handleClose}
                 recipient={recipient}
@@ -138,7 +138,7 @@ export function SuiportButton({
     );
 }
 
-function SuiportIcon() {
+function UniportIcon() {
     return (
         <svg
             width="18"

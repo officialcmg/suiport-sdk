@@ -1,5 +1,5 @@
 /**
- * SuiportModal Component
+ * UniportModal Component
  *
  * Premium payment modal with chain/token selection and QR code display
  * Based on Aura.build design with glassmorphism and animations
@@ -7,8 +7,8 @@
 
 import React, { useEffect, useCallback, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useSuiportPayment } from '../hooks/useSuiportPayment';
-import type { SuiportModalProps } from '../types';
+import { useUniportPayment } from '../hooks/useUniportPayment';
+import type { UniportModalProps } from '../types';
 
 // ============================================================================
 // STYLES
@@ -25,7 +25,7 @@ const styles = {
         justifyContent: 'center',
         zIndex: 9999,
         padding: '16px',
-        animation: 'suiport-fade-in 0.2s ease',
+        animation: 'uniport-fade-in 0.2s ease',
     },
     modal: {
         position: 'relative' as const,
@@ -40,7 +40,7 @@ const styles = {
             '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
         fontFamily:
             "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        animation: 'suiport-slide-up 0.3s ease',
+        animation: 'uniport-slide-up 0.3s ease',
     },
     header: {
         display: 'flex',
@@ -168,7 +168,7 @@ const styles = {
         padding: '2px',
         background: 'linear-gradient(90deg, #4F46E5, #7C3AED, #4F46E5)',
         backgroundSize: '200% 200%',
-        animation: 'suiport-gradient 3s ease infinite',
+        animation: 'uniport-gradient 3s ease infinite',
         border: 'none',
         cursor: 'pointer',
     },
@@ -269,7 +269,7 @@ const styles = {
         height: '8px',
         borderRadius: '50%',
         background: '#818CF8',
-        animation: 'suiport-pulse 1s ease infinite',
+        animation: 'uniport-pulse 1s ease infinite',
     },
     tokenBadge: {
         display: 'inline-flex',
@@ -285,25 +285,25 @@ const styles = {
 // CSS Keyframes (injected once)
 const injectStyles = () => {
     if (typeof document === 'undefined') return;
-    if (document.getElementById('suiport-styles')) return;
+    if (document.getElementById('uniport-styles')) return;
 
     const style = document.createElement('style');
-    style.id = 'suiport-styles';
+    style.id = 'uniport-styles';
     style.textContent = `
-        @keyframes suiport-fade-in {
+        @keyframes uniport-fade-in {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        @keyframes suiport-slide-up {
+        @keyframes uniport-slide-up {
             from { opacity: 0; transform: translateY(20px) scale(0.95); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        @keyframes suiport-gradient {
+        @keyframes uniport-gradient {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        @keyframes suiport-pulse {
+        @keyframes uniport-pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
@@ -315,7 +315,7 @@ const injectStyles = () => {
 // COMPONENT
 // ============================================================================
 
-export function SuiportModal({
+export function UniportModal({
     open,
     onClose,
     recipient,
@@ -324,8 +324,8 @@ export function SuiportModal({
     amount: initialAmount,
     onSuccess,
     onError,
-}: SuiportModalProps) {
-    const payment = useSuiportPayment({
+}: UniportModalProps) {
+    const payment = useUniportPayment({
         recipient,
         refundAddress,
         destinationToken,
@@ -833,7 +833,7 @@ export function SuiportModal({
                         marginTop: '16px',
                     }}
                 >
-                    Powered by SuiPort • NEAR Intents
+                    Powered by Uniport • NEAR Intents
                 </p>
             </div>
         </div>
@@ -962,7 +962,7 @@ function PulseIcon() {
                 cy="4"
                 r="4"
                 fill="#818CF8"
-                style={{ animation: 'suiport-pulse 1s ease infinite' }}
+                style={{ animation: 'uniport-pulse 1s ease infinite' }}
             />
         </svg>
     );

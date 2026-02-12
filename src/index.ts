@@ -1,5 +1,5 @@
 /**
- * SuiPort SDK - Main Entry Point
+ * Uniport SDK - Main Entry Point
  *
  * @packageDocumentation
  */

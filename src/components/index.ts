@@ -2,5 +2,5 @@
  * Components module exports
  */
 
-export { SuiportButton } from './SuiportButton';
-export { SuiportModal } from './SuiportModal';
+export { UniportButton } from './UniportButton';
+export { UniportModal } from './UniportModal';

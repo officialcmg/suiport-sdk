@@ -1,10 +1,10 @@
 /**
- * SuiPort SDK Configuration
+ * Uniport SDK Configuration
  */
 
 import { OpenAPI } from '@defuse-protocol/one-click-sdk-typescript';
 
-export interface SuiportConfig {
+export interface UniportConfig {
     /** NEAR API key for 1Click service */
     apiKey: string;
     /** API base URL (default: production) */
@@ -13,25 +13,25 @@ export interface SuiportConfig {
     referral?: string;
 }
 
-let _config: SuiportConfig | null = null;
+let _config: UniportConfig | null = null;
 
 /**
- * Initialize the SuiPort SDK
+ * Initialize the Uniport SDK
  *
  * @example
  * ```ts
- * import { initSuiport } from 'suiport-sdk'
+ * import { initUniport } from 'uniport'
  *
- * initSuiport({
+ * initUniport({
  *   apiKey: 'your-near-api-key',
  * })
  * ```
  */
-export function initSuiport(config: SuiportConfig): void {
+export function initUniport(config: UniportConfig): void {
     _config = config;
 
     if (!config.apiKey) {
-        throw new Error("Suiport SDK Error: apiKey is required. Pass your NEAR API key to initSuiport().");
+        throw new Error("Uniport SDK Error: apiKey is required. Pass your NEAR API key to initUniport().");
     }
 
     // Configure the underlying 1Click SDK
@@ -42,10 +42,10 @@ export function initSuiport(config: SuiportConfig): void {
 /**
  * Get the current SDK configuration
  */
-export function getConfig(): SuiportConfig {
+export function getConfig(): UniportConfig {
     if (!_config) {
         throw new Error(
-            'SuiPort SDK not initialized. Call initSuiport() first.'
+            'Uniport SDK not initialized. Call initUniport() first.'
         );
     }
     return _config;
