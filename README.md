@@ -1,6 +1,11 @@
-# uniport
+# Uniport
 
-Cross-chain payment SDK for Sui. Accept payments from any blockchain with one line of code.
+[![npm version](https://img.shields.io/npm/v/uniport.svg)](https://www.npmjs.com/package/uniport)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Cross-chain payment SDK. Accept crypto payments from any blockchain with one line of code.
+
+[GitHub Repository](https://github.com/officialcmg/uniport)
 
 ## Installation
 
